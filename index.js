@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion} = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId} = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 //middleware
@@ -27,15 +27,62 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    //30 to 36 1st step
+    // 1st step started 
     const coffeeCollection = client.db("coffeeDB").collection('coffee');
+// 1st step end
+
+    /** 2nd step start**/
+
+    app.get('/coffee', async (req, res) => {
+      const cursor = coffeeCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+  })
+    
+    // 1st step started 
     app.post('/coffee', async (req, res) => {
       const newCoffee = req.body;
       console.log(newCoffee);
-      const result = await coffeeCollection.insertOne(newCoffee)
-      res.send(result)
-    })
+      const result = await coffeeCollection.insertOne(newCoffee);
+      res.send(result);
+  })
+     // 1st step end
 
+     app.get('/coffee/:id', async (req, res) => {
+      const id = req.params.id;
+       const query = { _id: new ObjectId(id) }
+       const result = await coffeeCollection.findOne(query);
+      res.send(result);
+
+     })
+     app.put('/coffee/:id', async (req, res) => {
+      const id = req.params.id;
+       const filter = { _id: new ObjectId(id) } //id field diye match korbo, j konta update korbo 
+       const options = { upsert: true } //thakle update korba ,na thakle create korba
+       const updatedCoffee = req.body;
+       const coffee = {
+        $set: {
+          name: updatedCoffee.name, 
+          quantity: updatedCoffee.quantity, 
+          supplier: updatedCoffee.supplier, 
+          taste: updatedCoffee.taste, 
+          category: updatedCoffee.category, 
+          details: updatedCoffee.details, 
+          photo: updatedCoffee.photo
+      }
+       }
+       const result = await coffeeCollection.updateOne(filter, coffee, options);
+       res.send(result);
+
+  })
+    
+     app.delete('/coffee/:id', async (req, res) => {
+      const id = req.params.id;
+       const query = { _id: new ObjectId(id) }
+       const result = await coffeeCollection.deleteOne(query);
+      res.send(result);
+
+  })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
